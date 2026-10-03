@@ -56,6 +56,14 @@ winget install -e --id Google.Brotli
 # gzip.exe ships with Git for Windows / MSYS2
 ```
 
+> **Windows note:** package availability shifts often (upstream release
+> artifacts have changed layout without notice, breaking scoop/winget
+> manifests). If a package manager fails you, grab the official static
+> binaries directly from the projects' GitHub releases —
+> [google/brotli](https://github.com/google/brotli/releases) and
+> [facebook/zstd](https://github.com/facebook/zstd/releases) — or build
+> under WSL, where the Linux instructions apply and `gzip` is built in.
+
 Missing tools abort the build with a clear message
 (`fail_on_error: false` downgrades to a warning) — see Configuration.
 A host that can't install a tool can exclude its format instead:
