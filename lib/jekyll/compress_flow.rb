@@ -58,7 +58,7 @@ module Jekyll
         next false unless cfg["formats"].include?(name)
 
         available = tool_available?(format["tool"])
-        fail_or_warn(cfg, "#{format['tool']} not installed — skipping .#{name} output") unless available
+        fail_or_warn(cfg, "#{format['tool']} not installed — cannot generate .#{name} output") unless available
         available
       end
     end
