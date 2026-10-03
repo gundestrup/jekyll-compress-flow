@@ -1,5 +1,11 @@
 # jekyll-compress-flow
 
+[![Status: Active](https://img.shields.io/badge/status-active-success)](https://github.com/gundestrup/jekyll-compress-flow)
+[![Release](https://img.shields.io/github/v/tag/gundestrup/jekyll-compress-flow)](https://github.com/gundestrup/jekyll-compress-flow/tags)
+[![Ruby](https://img.shields.io/badge/ruby-%E2%89%A5%203.3-red.svg)](https://www.ruby-lang.org/)
+[![Jekyll](https://img.shields.io/badge/jekyll-4.x-blue.svg)](https://jekyllrb.com/)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
+
 Jekyll plugin that generates **Brotli (`.br`), Zstandard (`.zst`) and
 gzip (`.gz`) siblings** for text assets at the end of a build. A
 precompressed-capable static server then serves the best encoding the
@@ -84,3 +90,8 @@ bundle install
 bundle exec rake          # rubocop + markdownlint + bundler-audit + rspec + gem build
 bundle exec rake quick    # rubocop + rspec only
 ```
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 or
+later (`AGPL-3.0-or-later`). See [LICENSE](LICENSE).
