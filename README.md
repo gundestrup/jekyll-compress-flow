@@ -34,6 +34,27 @@ apt-get install brotli zstd gzip     # Debian/Ubuntu CI
 That's it — `JEKYLL_ENV=production bundle exec jekyll build` writes
 `file.br`, `file.zst` and `file.gz` next to every text asset.
 
+## Serving the compressed files
+
+The plugin only *writes* the siblings — the web server must be
+configured to negotiate them via `Accept-Encoding`:
+
+- **Caddy**: built in —
+  `file_server { precompressed gzip br zstd }`. Caddy prefers the best
+  encoding the client accepts and falls back to the plain file.
+  ([docs](https://caddyserver.com/docs/caddyfile/directives/file_server#precompressed))
+- **nginx**: `gzip_static on;` serves `.gz` transparently
+  ([docs](https://nginx.org/en/docs/http/ngx_http_gzip_static_module.html)).
+  Brotli needs the `ngx_brotli` module with `brotli_static on;`
+  ([docs](https://github.com/google/ngx_brotli#brotli_static)) — not in
+  stock nginx builds. There is no stock Zstandard module yet.
+- **Apache**: `mod_brotli`/`mod_deflate` compress on the fly; serving
+  precompressed files needs `Options MultiViews` +
+  `AddEncoding br .br` / `AddEncoding x-gzip .gz` /
+  `AddEncoding zstd .zst` plus `AddType` mappings in the docroot's
+  `.htaccess`. On-the-fly `mod_brotli` is usually the simpler choice
+  ([docs](https://httpd.apache.org/docs/2.4/mod/mod_brotli.html)).
+
 ## Configuration (`_config.yml`)
 
 ```yaml

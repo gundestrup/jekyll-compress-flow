@@ -32,6 +32,15 @@ RSpec.describe Jekyll::CompressFlow do
     end
   end
 
+  it "produces siblings that decode back to the original bytes" do
+    original = "<html>#{'x' * 500}</html>"
+    write_file("index.html", original)
+    described_class.run(dest, config)
+    expect(`brotli -d -c #{File.join(dest, "index.html.br")}`).to eq(original)
+    expect(`zstd -d -c #{File.join(dest, "index.html.zst")} 2>/dev/null`).to eq(original)
+    expect(`gzip -d -c #{File.join(dest, "index.html.gz")}`).to eq(original)
+  end
+
   it "skips non-text files and already-compressed siblings" do
     write_file("photo.png")
     write_file("index.html.br")
