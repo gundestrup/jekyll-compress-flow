@@ -22,7 +22,9 @@ Jekyll plugin: generates `.br`/`.zst`/`.gz` siblings for text assets at
 - `# frozen_string_literal: true`, double-quoted strings, RuboCop clean
 - Shell out with array-form `system()` — never string-interpolated commands
 - Compressor CLI tools are a *build host* dependency, not a gem dependency —
-  detect once per format, `fail_on_error` decides abort vs warn
+  detect once per format via `tool --version`, `fail_on_error` decides
+  abort vs warn; minimums brotli >= 1.1.0 / zstd >= 1.5.5 (Ubuntu 24.04
+  LTS floor), unparseable banner = installed
 
 ## CI / services
 

@@ -30,11 +30,18 @@ simply happens at build time instead of request time.
 The plugin shells out to the platform compressor CLIs — install them on
 the **build host** (not the web server; visitors need nothing):
 
-| Tool | Generates | Notes |
-| ---- | --------- | ----- |
-| `brotli` | `.br` | manual install everywhere |
-| `zstd` | `.zst` | manual install everywhere |
-| `gzip` | `.gz` | preinstalled on macOS/Linux; ships with Git for Windows |
+| Tool | Generates | Minimum | Tested baseline |
+| ---- | --------- | ------- | --------------- |
+| `brotli` | `.br` | 1.1.0 | 1.2.0 (macOS) |
+| `zstd` | `.zst` | 1.5.5 | 1.5.7 (macOS) |
+| `gzip` | `.gz` | any | preinstalled on macOS/Linux; ships with Git for Windows |
+
+The minimums match Ubuntu 24.04 LTS — the oldest versions exercised by
+CI on every push; the build checks `tool --version` once per format and
+aborts on `tool X found — need >= Y` (or warns with
+`fail_on_error: false`). `gzip` has no version check: Apple and GNU
+gzip use incomparable version strings and the flags used are
+POSIX-stable.
 
 ```bash
 # macOS (Homebrew)

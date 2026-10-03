@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "jekyll"
+require "open3"
 
 require_relative "compress_flow/version"
 
@@ -15,8 +16,10 @@ module Jekyll
   # (brotli, zstd, gzip) must be installed on the build host.
   module CompressFlow
     FORMATS = {
-      "br" => { "tool" => "brotli", "args" => %w[-f -k] },
-      "zst" => { "tool" => "zstd", "args" => %w[-f -q -19] },
+      "br" => { "tool" => "brotli", "args" => %w[-f -k],
+                "min_version" => "1.1.0", "version_pattern" => /brotli\s+(\d+(?:\.\d+)+)/ },
+      "zst" => { "tool" => "zstd", "args" => %w[-f -q -19],
+                 "min_version" => "1.5.5", "version_pattern" => /v(\d+\.\d+\.\d+)/ },
       "gz" => { "tool" => "gzip", "args" => %w[-f -9 -k] }
     }.freeze
 
@@ -55,12 +58,24 @@ module Jekyll
       fail_or_warn(cfg, "unknown formats ignored: #{unknown.join(', ')}") unless unknown.empty?
 
       FORMATS.select do |name, format|
-        next false unless cfg["formats"].include?(name)
-
-        available = tool_available?(format["tool"])
-        fail_or_warn(cfg, "#{format['tool']} not installed — cannot generate .#{name} output") unless available
-        available
+        cfg["formats"].include?(name) && tool_ok?(name, format, cfg)
       end
+    end
+
+    # Installed and new enough? Reports a missing or too-old tool once via
+    # fail_or_warn — never per file.
+    def tool_ok?(name, format, cfg)
+      detected = tool_version(format["tool"], format["version_pattern"])
+      if detected.nil?
+        fail_or_warn(cfg, "#{format['tool']} not installed — cannot generate .#{name} output")
+        return false
+      end
+
+      minimum = format["min_version"]
+      return true unless minimum && detected.is_a?(Gem::Version) && detected < Gem::Version.new(minimum)
+
+      fail_or_warn(cfg, "#{format['tool']} #{detected} found — need >= #{minimum} for .#{name} output")
+      false
     end
 
     def target_files(dest, cfg)
@@ -76,12 +91,19 @@ module Jekyll
       fail_or_warn(cfg, "#{format['tool']} failed on #{file}") unless ok
     end
 
-    def tool_available?(tool)
-      system(tool, "--version", out: File::NULL, err: File::NULL)
-      # :nocov: — defensive: system returns nil for missing binaries on modern Ruby
+    # Detected Gem::Version of +tool+, :unversioned when installed but the
+    # banner could not be parsed (or no pattern is defined — e.g. Apple gzip
+    # vs GNU gzip use incomparable version strings), nil when not installed.
+    def tool_version(tool, pattern)
+      out, status = Open3.capture2e(tool, "--version")
+      return nil unless status.success?
+      return :unversioned unless pattern && (match = out.match(pattern))
+
+      Gem::Version.new(match[1])
     rescue Errno::ENOENT
-      false
-      # :nocov:
+      nil
+    rescue ArgumentError
+      :unversioned
     end
 
     def fail_or_warn(cfg, message)

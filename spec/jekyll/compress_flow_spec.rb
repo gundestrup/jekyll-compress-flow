@@ -88,21 +88,69 @@ RSpec.describe Jekyll::CompressFlow do
   end
 
   it "aborts when a required tool is missing" do
-    allow(described_class).to receive(:tool_available?).and_return(false)
+    allow(described_class).to receive(:tool_version).and_return(nil)
     write_file("index.html")
     expect { described_class.run(dest, config) }
       .to raise_error(Jekyll::Errors::FatalException, /not installed/)
   end
 
   it "treats a nonexistent binary as unavailable" do
-    expect(described_class).not_to be_tool_available("definitely-missing-cf-tool")
+    expect(described_class.tool_version("definitely-missing-cf-tool", /x/)).to be_nil
+  end
+
+  it "treats a failed --version probe as not installed" do
+    status = instance_double(Process::Status, success?: false)
+    allow(Open3).to receive(:capture2e).and_return(["", status])
+    expect(described_class.tool_version("brotli", /brotli\s+(\d+(?:\.\d+)+)/)).to be_nil
+  end
+
+  it "treats an invalid version string as unversioned" do
+    status = instance_double(Process::Status, success?: true)
+    allow(Open3).to receive(:capture2e).and_return(["brotli abc", status])
+    expect(described_class.tool_version("brotli", /brotli\s+(\S+)/)).to eq(:unversioned)
+  end
+
+  it "skips a missing tool in warn mode but keeps supported formats" do
+    write_file("index.html")
+    allow(described_class).to receive(:tool_version).and_wrap_original do |original, tool, pattern|
+      tool == "brotli" ? nil : original.call(tool, pattern)
+    end
+    allow(Jekyll.logger).to receive(:warn)
+    described_class.run(dest, config.merge("fail_on_error" => false))
+    expect(File.exist?(File.join(dest, "index.html.br"))).to be(false)
+    expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
+  end
+
+  it "aborts when a tool is older than the minimum" do
+    allow(described_class).to receive(:tool_version).and_return(Gem::Version.new("0.1.0"))
+    write_file("index.html")
+    expect { described_class.run(dest, config) }
+      .to raise_error(Jekyll::Errors::FatalException, /need >= /)
+  end
+
+  it "skips an outdated tool but keeps supported formats" do
+    write_file("index.html")
+    allow(described_class).to receive(:tool_version).and_wrap_original do |original, tool, pattern|
+      tool == "zstd" ? Gem::Version.new("1.0.0") : original.call(tool, pattern)
+    end
+    allow(Jekyll.logger).to receive(:warn)
+    described_class.run(dest, config.merge("fail_on_error" => false))
+    expect(File.exist?(File.join(dest, "index.html.zst"))).to be(false)
+    expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
+    expect(Jekyll.logger).to have_received(:warn).with("CompressFlow:", /need >= /).at_least(:once)
+  end
+
+  it "treats an unparseable version banner as installed" do
+    write_file("index.html")
+    status = instance_double(Process::Status, success?: true)
+    allow(Open3).to receive(:capture2e).and_return(["strange banner", status])
+    described_class.run(dest, config)
+    expect(generated).not_to be_empty
   end
 
   it "warns when a compressor fails on a file" do
     write_file("index.html")
-    allow(described_class).to receive(:system).and_wrap_original do |original, *args|
-      args.include?("--version") ? original.call(*args) : false
-    end
+    allow(described_class).to receive(:system).and_return(false)
     allow(Jekyll.logger).to receive(:warn)
     described_class.run(dest, config.merge("fail_on_error" => false))
     expect(Jekyll.logger).to have_received(:warn).with("CompressFlow:", /failed on/).at_least(:once)
