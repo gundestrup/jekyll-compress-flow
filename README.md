@@ -25,6 +25,42 @@ simply happens at build time instead of request time.
 
 [Compare different formats](https://speedvitals.com/blog/zstd-vs-brotli-vs-gzip/)
 
+## Prerequisites
+
+The plugin shells out to the platform compressor CLIs — install them on
+the **build host** (not the web server; visitors need nothing):
+
+| Tool | Generates | Notes |
+| ---- | --------- | ----- |
+| `brotli` | `.br` | manual install everywhere |
+| `zstd` | `.zst` | manual install everywhere |
+| `gzip` | `.gz` | preinstalled on macOS/Linux; ships with Git for Windows |
+
+```bash
+# macOS (Homebrew)
+brew install brotli zstd
+
+# Debian / Ubuntu / GitHub Actions
+sudo apt-get install -y brotli zstd
+
+# Fedora
+sudo dnf install brotli zstd
+
+# Alpine
+apk add brotli zstd
+
+# Windows — scoop (both in main bucket)
+scoop install brotli zstd
+# or winget for brotli:
+winget install -e --id Google.Brotli
+# gzip.exe ships with Git for Windows / MSYS2
+```
+
+Missing tools abort the build with a clear message
+(`fail_on_error: false` downgrades to a warning) — see Configuration.
+A host that can't install a tool can exclude its format instead:
+`formats: [gz]`.
+
 ## Install
 
 Add to the site's `Gemfile`:
