@@ -1,10 +1,17 @@
 # jekyll-compress-flow
 
 [![Status: Active](https://img.shields.io/badge/status-active-success)](https://github.com/gundestrup/jekyll-compress-flow)
+[![CI](https://github.com/gundestrup/jekyll-compress-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/gundestrup/jekyll-compress-flow/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/tag/gundestrup/jekyll-compress-flow)](https://github.com/gundestrup/jekyll-compress-flow/tags)
+[![Gem Version](https://img.shields.io/gem/v/jekyll-compress-flow)](https://rubygems.org/gems/jekyll-compress-flow)
+[![Codecov](https://codecov.io/gh/gundestrup/jekyll-compress-flow/graph/badge.svg)](https://codecov.io/gh/gundestrup/jekyll-compress-flow)
 [![Ruby](https://img.shields.io/badge/ruby-%E2%89%A5%203.3-red.svg)](https://www.ruby-lang.org/)
 [![Jekyll](https://img.shields.io/badge/jekyll-4.x-blue.svg)](https://jekyllrb.com/)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/gundestrup/jekyll-compress-flow)
+[![CodeFactor](https://www.codefactor.io/repository/github/gundestrup/jekyll-compress-flow/badge)](https://www.codefactor.io/repository/github/gundestrup/jekyll-compress-flow)
+[![Semgrep CE](https://img.shields.io/badge/Semgrep_CE-security-success)](https://github.com/gundestrup/jekyll-compress-flow/security/code-scanning)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=gundestrup_jekyll-compress-flow&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=gundestrup_jekyll-compress-flow)
 
 Jekyll plugin that generates **Brotli (`.br`), Zstandard (`.zst`) and
 gzip (`.gz`) siblings** for text assets at the end of a build. A

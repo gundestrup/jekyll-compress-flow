@@ -23,3 +23,16 @@ Jekyll plugin: generates `.br`/`.zst`/`.gz` siblings for text assets at
 - Shell out with array-form `system()` — never string-interpolated commands
 - Compressor CLI tools are a *build host* dependency, not a gem dependency —
   detect once per format, `fail_on_error` decides abort vs warn
+
+## CI / services
+
+- `.github/workflows/ci.yml` — Ruby 3.3/3.4 matrix; installs `brotli`/`zstd`
+  via apt (specs shell out to real CLIs), bundle-audit, `rake ci`, Codecov
+  upload on 3.4; separate `semgrep ci` job
+- Secrets used: `SEMGREP_APP_TOKEN`, `CODECOV_TOKEN` (repo → Settings →
+  Secrets → Actions); Codecov OIDC works without the token
+- Codecov (`codecov.yml`, 85% target), SonarCloud automatic analysis
+  (`.sonarcloud.properties`), CodeFactor + DeepWiki index the public repo
+  automatically; `.devin/wiki.json` steers DeepWiki
+- `.semgrep.yml` holds the local ReDoS rule — pre-commit uses it, CI uses
+  the org policy via `semgrep ci`

@@ -14,3 +14,6 @@ end
 
 gem "rubocop", "~> 1.91", group: :development
 gem "rubocop-rspec", "~> 3.10", group: :development
+
+gem "simplecov", "~> 1.1", group: :test
+gem "simplecov-cobertura", "~> 4.0", group: :test

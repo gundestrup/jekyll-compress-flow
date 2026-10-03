@@ -14,6 +14,15 @@ task quality: %i[rubocop markdownlint bundler_audit spec build_gem]
 desc "Run quick checks (style + tests only)"
 task quick: %i[rubocop spec]
 
+desc "Run the test suite and syntax checks (CI)"
+task :ci do
+  sh "bundle exec rspec"
+  sh "bundle exec rubocop"
+  sh "npx --yes markdownlint-cli2@0.23.2"
+  Dir["lib/**/*.rb"].each { |file| sh "bundle exec ruby -c #{file}" }
+  sh "gem build #{GEMSPEC_FILE}"
+end
+
 desc "Check code style with RuboCop"
 task :rubocop do
   sh "bundle exec rubocop"

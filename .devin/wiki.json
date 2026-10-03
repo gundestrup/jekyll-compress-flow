@@ -1,0 +1,38 @@
+{
+  "repo_notes": [
+    "Jekyll plugin (Ruby >= 3.3) that generates .br/.zst/.gz siblings next to text assets at the :site, :post_write hook, so a precompressed-capable static server (Caddy file_server precompressed, nginx gzip_static/brotli_static, Apache AddEncoding+MultiViews) serves them with zero per-request CPU.",
+    "Design: shells out to the platform brotli/zstd/gzip CLIs rather than native Ruby bindings — no native-extension dependency risk, best available quality levels.",
+    "Production-only by default: enabled resolves to Jekyll.env == 'production' unless compress_flow.enabled is set explicitly in _config.yml.",
+    "Missing compressor binary aborts once per format (fail_on_error: false downgrades to warning) — never silently ships uncompressed output.",
+    "Specs create real tmpdir sites and shell out to the real compressor CLIs; brotli/zstd/gzip must be installed to run them (CI installs them via apt).",
+    "Quality gate: bundle exec rake runs rubocop + markdownlint + bundler-audit + rspec + gem build.",
+    "See AGENTS.md for full project context and conventions."
+  ],
+  "pages": [
+    {
+      "title": "Architecture Overview",
+      "purpose": "How the single-module plugin works: Jekyll::CompressFlow registers a :site, :post_write hook, CompressFlow.run walks site.dest for configured extensions and invokes each enabled format's CLI once per file",
+      "page_notes": ["Include Mermaid diagram: jekyll build -> post_write hook -> run(dest, config) -> per-format Open3 capture -> siblings"]
+    },
+    {
+      "title": "Configuration",
+      "purpose": "All options under the compress_flow: key in _config.yml — enabled, formats (br/zst/gz, all three by default, any subset), extensions, min_size, fail_on_error — and how DEFAULTS merge with user config",
+      "parent": "Architecture Overview"
+    },
+    {
+      "title": "Server Integration",
+      "purpose": "How precompressed siblings are consumed: Caddy file_server precompressed (build-time pairing used by the sibling sites), nginx *_static modules, Apache mod_brotli/mod_deflate + AddEncoding/MultiViews — and why Vary: Accept-Encoding matters",
+      "parent": "Architecture Overview"
+    },
+    {
+      "title": "Testing and Quality",
+      "purpose": "RSpec conventions (tmpdir fixture sites, real CLI roundtrip decode assertions), rubocop/bundler-audit/semgrep gates, SimpleCov coverage, and the CI matrix",
+      "parent": "Architecture Overview"
+    },
+    {
+      "title": "Release Process",
+      "purpose": "version:bump -> CHANGELOG entry -> rake release[x.y.z] tag+push -> gem push to rubygems",
+      "parent": "Architecture Overview"
+    }
+  ]
+}
