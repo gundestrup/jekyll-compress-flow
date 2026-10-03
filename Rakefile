@@ -76,3 +76,17 @@ namespace :version do
     puts "CHANGELOG.md has an entry for version #{version}"
   end
 end
+
+desc "Tag and push release v<version> (tags stay coupled to releases)"
+task :release, [:version] do |_, args|
+  v = args[:version] or abort "usage: bundle exec rake 'release[1.2.3]'"
+  abort "version.rb is not #{v} — run 'version:bump' first" \
+    unless File.read(VERSION_FILE)[/VERSION = "([^"]+)"/, 1] == v
+  Rake::Task["version:check_changelog"].invoke
+  abort "working tree not clean — commit or stash first" unless `git status --porcelain`.empty?
+  abort "not on main" unless `git branch --show-current`.strip == "main"
+  Rake::Task[:quality].invoke
+  sh "git tag -a v#{v} -m 'Release #{v}'"
+  sh "git push origin main v#{v}"
+  puts "Tagged and pushed v#{v}. Publish to rubygems with: gem push pkg/jekyll-compress-flow-#{v}.gem"
+end
