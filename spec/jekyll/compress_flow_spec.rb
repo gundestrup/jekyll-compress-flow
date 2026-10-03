@@ -93,4 +93,52 @@ RSpec.describe Jekyll::CompressFlow do
     expect { described_class.run(dest, config) }
       .to raise_error(Jekyll::Errors::FatalException, /not installed/)
   end
+
+  it "treats a nonexistent binary as unavailable" do
+    expect(described_class).not_to be_tool_available("definitely-missing-cf-tool")
+  end
+
+  it "warns when a compressor fails on a file" do
+    write_file("index.html")
+    allow(described_class).to receive(:system).and_wrap_original do |original, *args|
+      args.include?("--version") ? original.call(*args) : false
+    end
+    allow(Jekyll.logger).to receive(:warn)
+    described_class.run(dest, config.merge("fail_on_error" => false))
+    expect(Jekyll.logger).to have_received(:warn).with("CompressFlow:", /failed on/).at_least(:once)
+  end
+
+  context "when running inside a real jekyll build" do
+    let(:src) { Dir.mktmpdir }
+
+    after { FileUtils.remove_entry(src) }
+
+    def build_site(env)
+      old_env = ENV.fetch("JEKYLL_ENV", nil)
+      ENV["JEKYLL_ENV"] = env
+      Jekyll::Site.new(
+        Jekyll.configuration(
+          "source" => src,
+          "destination" => dest,
+          "quiet" => true
+        )
+      ).process
+    ensure
+      old_env.nil? ? ENV.delete("JEKYLL_ENV") : ENV["JEKYLL_ENV"] = old_env
+    end
+
+    it "the post_write hook emits siblings in production" do
+      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+      build_site("production")
+      siblings("index.html").each do |path|
+        expect(File.exist?(path)).to be(true), "missing #{path}"
+      end
+    end
+
+    it "the hook stays idle outside production" do
+      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+      build_site("development")
+      expect(generated).to be_empty
+    end
+  end
 end

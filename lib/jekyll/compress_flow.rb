@@ -78,8 +78,10 @@ module Jekyll
 
     def tool_available?(tool)
       system(tool, "--version", out: File::NULL, err: File::NULL)
+      # :nocov: — defensive: system returns nil for missing binaries on modern Ruby
     rescue Errno::ENOENT
       false
+      # :nocov:
     end
 
     def fail_or_warn(cfg, message)
