@@ -15,7 +15,10 @@ Jekyll plugin: generates `.br`/`.zst`/`.gz` siblings for text assets at
 
 - `bundle install`, `bundle exec rake` (quality gate), `rake quick`
 - `rake 'version:bump[patch]'`, `rake version:check_changelog`
-- Release: bump → changelog `## X.Y.Z — date` → `rake` → `gem build` → `gem push`
+- Release: `rake version:bump[...]` → changelog `## X.Y.Z — date` →
+  `rake 'release_tag[X.Y.Z]'` (gate + tag + push) → release workflow
+  publishes via trusted publishing. Never add a task named `release` —
+  bundler's is required by rubygems/release-gem.
 
 ## Conventions
 

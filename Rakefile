@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
-# No bundler/gem_tasks: its release task does a direct `gem push` (API
-# key), bypassing the tag-push -> trusted-publishing release workflow.
+# bundler/gem_tasks provides the bare `release` task that
+# rubygems/release-gem invokes in the tag workflow (OIDC-minted
+# credentials — that IS trusted publishing). The local tag+push
+# task is named `release_tag` so the two can never collide.
+require "bundler/gem_tasks"
 
 VERSION_FILE = File.expand_path("lib/jekyll/compress_flow/version.rb", __dir__)
 CHANGELOG_FILE = File.expand_path("CHANGELOG.md", __dir__)
@@ -88,8 +91,8 @@ namespace :version do
 end
 
 desc "Tag and push release v<version> (tags stay coupled to releases)"
-task :release, [:version] do |_, args|
-  v = args[:version] or abort "usage: bundle exec rake 'release[1.2.3]'"
+task :release_tag, [:version] do |_, args|
+  v = args[:version] or abort "usage: bundle exec rake 'release_tag[1.2.3]'"
   abort "version.rb is not #{v} — run 'version:bump' first" \
     unless File.read(VERSION_FILE)[/VERSION = "([^"]+)"/, 1] == v
   Rake::Task["version:check_changelog"].invoke
