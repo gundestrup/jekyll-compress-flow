@@ -1,0 +1,44 @@
+name: Release gem
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Build and publish RubyGem
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@762794c140bbeda0f1224786aa33b4b46783a6c1 # v1.326.0
+        with:
+          bundler-cache: true
+          # no ruby-version: — setup-ruby reads .ruby-version (single source)
+
+      - name: Verify tag matches gem version
+        run: test "v$(bundle exec rake version:show)" = "${GITHUB_REF_NAME}"
+
+      - name: Verify CHANGELOG has an entry for this version
+        run: bundle exec rake version:check_changelog
+
+      - name: Build gem
+        run: gem build jekyll-compress-flow.gemspec
+
+      - name: Upload gem to GitHub release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: jekyll-compress-flow-*.gem
+
+      - name: Publish to RubyGems
+        uses: rubygems/release-gem@7f9650160c1a4e7989fdc9855807bdbd421d8b6b # v1.4.1

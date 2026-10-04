@@ -97,5 +97,5 @@ task :release, [:version] do |_, args|
   Rake::Task[:quality].invoke
   sh "git tag -a v#{v} -m 'Release #{v}'"
   sh "git push origin main v#{v}"
-  puts "Tagged and pushed v#{v}. Publish to rubygems with: gem push pkg/jekyll-compress-flow-#{v}.gem"
+  puts "Tagged and pushed v#{v} — the release workflow builds and publishes to RubyGems via trusted publishing."
 end
