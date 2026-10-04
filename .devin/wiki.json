@@ -1,18 +1,18 @@
 {
   "repo_notes": [
-    "Jekyll plugin (Ruby >= 3.3) that generates .br/.zst/.gz siblings next to text assets at the :site, :post_write hook, so a precompressed-capable static server (Caddy file_server precompressed, nginx gzip_static/brotli_static, Apache AddEncoding+MultiViews) serves them with zero per-request CPU.",
-    "Design: shells out to the platform brotli/zstd/gzip CLIs rather than native Ruby bindings — no native-extension dependency risk, best available quality levels.",
-    "Production-only by default: enabled resolves to Jekyll.env == 'production' unless compress_flow.enabled is set explicitly in _config.yml.",
-    "Missing compressor binary aborts once per format (fail_on_error: false downgrades to warning) — never silently ships uncompressed output.",
-    "Specs create real tmpdir sites and shell out to the real compressor CLIs; brotli/zstd/gzip must be installed to run them (CI installs them via apt).",
-    "Quality gate: bundle exec rake runs rubocop + markdownlint + bundler-audit + rspec + gem build.",
-    "See AGENTS.md for full project context and conventions."
+    { "content": "Jekyll plugin (Ruby >= 3.3) that generates .br/.zst/.gz siblings next to text assets at the :site, :post_write hook, so a precompressed-capable static server (Caddy file_server precompressed, nginx gzip_static/brotli_static, Apache AddEncoding+MultiViews) serves them with zero per-request CPU." },
+    { "content": "Design: shells out to the platform brotli/zstd/gzip CLIs rather than native Ruby bindings — no native-extension dependency risk, best available quality levels." },
+    { "content": "Production-only by default: enabled resolves to Jekyll.env == 'production' unless compress_flow.enabled is set explicitly in _config.yml." },
+    { "content": "Missing compressor binary aborts once per format (fail_on_error: false downgrades to warning) — never silently ships uncompressed output." },
+    { "content": "Specs create real tmpdir sites and shell out to the real compressor CLIs; brotli/zstd/gzip must be installed to run them (CI installs them via apt)." },
+    { "content": "Quality gate: bundle exec rake runs rubocop + markdownlint + bundler-audit + rspec + gem build." },
+    { "content": "See AGENTS.md for full project context and conventions." }
   ],
   "pages": [
     {
       "title": "Architecture Overview",
       "purpose": "How the single-module plugin works: Jekyll::CompressFlow registers a :site, :post_write hook, CompressFlow.run walks site.dest for configured extensions and invokes each enabled format's CLI once per file",
-      "page_notes": ["Include Mermaid diagram: jekyll build -> post_write hook -> run(dest, config) -> per-format Open3 capture -> siblings"]
+      "page_notes": [{ "content": "Include Mermaid diagram: jekyll build -> post_write hook -> run(dest, config) -> per-format Open3 capture -> siblings" }]
     },
     {
       "title": "Configuration",
@@ -31,7 +31,7 @@
     },
     {
       "title": "Release Process",
-      "purpose": "version:bump -> CHANGELOG entry -> rake release[x.y.z] tag+push -> gem push to rubygems",
+      "purpose": "version:bump -> CHANGELOG entry -> rake release_tag[x.y.z] tag+push -> release workflow publishes to RubyGems via trusted publishing",
       "parent": "Architecture Overview"
     }
   ]
