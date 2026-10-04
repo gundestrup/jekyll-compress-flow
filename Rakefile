@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require "bundler/gem_tasks"
+# No bundler/gem_tasks: its release task does a direct `gem push` (API
+# key), bypassing the tag-push -> trusted-publishing release workflow.
 
 VERSION_FILE = File.expand_path("lib/jekyll/compress_flow/version.rb", __dir__)
 CHANGELOG_FILE = File.expand_path("CHANGELOG.md", __dir__)
