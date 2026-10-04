@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## 0.2.0 — 2026-10-03
+
+### Added
+
+- Tool version checks: `brotli >= 1.1.0` / `zstd >= 1.5.5` enforced via
+  `tool --version` probe (Ubuntu 24.04 LTS floor — the oldest versions
+  exercised by CI); `gzip` unchecked (Apple vs GNU version strings are
+  incomparable); unparseable version banners are treated as installed
+- Minimum-versions + per-platform install docs (brew/apt/dnf/apk/
+  scoop/winget), Caddy/nginx/Apache serving guide
+- Specs: real `Jekyll::Site` build exercising the hook end-to-end,
+  compressor-failure and version-check paths — 100% line + branch
+- CI: Ruby 3.3/3.4 matrix, Codecov, Semgrep, SonarCloud, CodeFactor,
+  DeepWiki, Dependabot; release workflow publishing via RubyGems
+  trusted publishing (OIDC)
+
+### Changed
+
+- Missing-tool message reads "cannot generate" — accurate in both
+  warn and abort modes
+
 ## 0.1.0 — 2026-10-03
 
 ### Added
