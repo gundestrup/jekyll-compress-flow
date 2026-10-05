@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Register the compression dispatcher at low priority (10) by default, after
+  normal-priority processing and Fingerprint Flow (default 12); allow per-site
+  `compress_flow.priority` values from 0 through 10.
+
 ## 0.2.0 — 2026-10-03
 
 ### Added

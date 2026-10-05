@@ -23,8 +23,11 @@ module Jekyll
       "gz" => { "tool" => "gzip", "args" => %w[-f -9 -k] }
     }.freeze
 
+    DEFAULT_POST_WRITE_PRIORITY = 10
+    POST_WRITE_PRIORITIES = (0..DEFAULT_POST_WRITE_PRIORITY)
     DEFAULTS = {
       "enabled" => nil, # nil => Jekyll.env == "production"
+      "priority" => DEFAULT_POST_WRITE_PRIORITY,
       "extensions" => %w[html css js json xml svg txt map],
       "formats" => %w[br zst gz],
       "min_size" => 0,
@@ -32,6 +35,14 @@ module Jekyll
     }.freeze
 
     module_function
+
+    def post_write_priority(config)
+      priority = config.transform_keys(&:to_s).fetch("priority", DEFAULT_POST_WRITE_PRIORITY)
+      return priority if priority.is_a?(Integer) && POST_WRITE_PRIORITIES.cover?(priority)
+
+      raise Jekyll::Errors::FatalException,
+            "CompressFlow: compress_flow.priority must be an integer from 0 through 10"
+    end
 
     # Entry point — compress all matching files under +dest+.
     # +config+ is the site's `compress_flow:` mapping (string or symbol keys).
@@ -114,6 +125,12 @@ module Jekyll
   end
 end
 
-Jekyll::Hooks.register :site, :post_write do |site|
-  Jekyll::CompressFlow.run(site.dest, site.config["compress_flow"] || {})
+Jekyll::CompressFlow::POST_WRITE_PRIORITIES.each do |hook_priority|
+  registered_priority = hook_priority
+  Jekyll::Hooks.register :site, :post_write, priority: registered_priority do |site|
+    config = site.config["compress_flow"] || {}
+    next unless Jekyll::CompressFlow.post_write_priority(config) == registered_priority
+
+    Jekyll::CompressFlow.run(site.dest, config)
+  end
 end

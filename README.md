@@ -124,16 +124,22 @@ configured to negotiate them via `Accept-Encoding`:
 ```yaml
 compress_flow:
   enabled: true            # default: Jekyll.env == "production"
+  priority: 10             # integer 0..10; default 10, after fingerprinting
   formats: [br, zst, gz]   # subset of the three; unknown names abort
   extensions: [html, css, js, json, xml, svg, txt, map]
   min_size: 0              # bytes — skip tiny files
   fail_on_error: true      # false: warn + skip instead of failing build
 ```
 
+The post-write dispatcher accepts integer priorities from 0 through 10 so
+site-specific compression remains after the default Fingerprint Flow range
+(11–19).
+
 ## Behavior
 
-- Runs on `:site, :post_write`, after every file is written — works
-  with any generator (pages, posts, feeds, sitemap, search JSON).
+- Runs on `:site, :post_write` at low priority (10), after normal-priority
+  post-processors and the priority-12 Fingerprint Flow pass — works with any
+  generator (pages, posts, feeds, sitemap, search JSON).
 - Compressed siblings are never re-compressed (extensions not in the
   list); images/fonts/PDFs are skipped (already compressed formats).
 - A missing CLI tool aborts the build once per format

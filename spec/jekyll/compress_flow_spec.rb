@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "zlib"
 
 RSpec.describe Jekyll::CompressFlow do
   let(:config) { { "enabled" => true } }
@@ -21,6 +22,25 @@ RSpec.describe Jekyll::CompressFlow do
 
   def generated
     Dir.glob(File.join(dest, "**", "*.{br,zst,gz}"))
+  end
+
+  it "registers a dispatcher after output processors" do
+    callbacks = Jekyll::Hooks.instance_variable_get(:@registry).fetch(:site).fetch(:post_write).select do |hook|
+      hook.source_location&.first&.end_with?("/lib/jekyll/compress_flow.rb")
+    end
+    priorities = Jekyll::Hooks.instance_variable_get(:@hook_priority)
+    registered = callbacks.map { |hook| -priorities.fetch(hook).first }
+
+    expect(registered).to match_array((0..10).to_a)
+    expect(Jekyll::CompressFlow::DEFAULT_POST_WRITE_PRIORITY).to eq(10)
+    expect(described_class.post_write_priority({})).to eq(10)
+  end
+
+  it "accepts only compression priorities below fingerprinting" do
+    expect(described_class.post_write_priority({})).to eq(10)
+    expect(described_class.post_write_priority("priority" => 4)).to eq(4)
+    expect { described_class.post_write_priority("priority" => 11) }
+      .to raise_error(Jekyll::Errors::FatalException)
   end
 
   it "generates .br/.zst/.gz siblings for text assets" do
@@ -161,16 +181,11 @@ RSpec.describe Jekyll::CompressFlow do
 
     after { FileUtils.remove_entry(src) }
 
-    def build_site(env)
+    def build_site(env, config = {})
       old_env = ENV.fetch("JEKYLL_ENV", nil)
       ENV["JEKYLL_ENV"] = env
-      Jekyll::Site.new(
-        Jekyll.configuration(
-          "source" => src,
-          "destination" => dest,
-          "quiet" => true
-        )
-      ).process
+      site_config = { "source" => src, "destination" => dest, "quiet" => true }.merge(config)
+      Jekyll::Site.new(Jekyll.configuration(site_config)).process
     ensure
       old_env.nil? ? ENV.delete("JEKYLL_ENV") : ENV["JEKYLL_ENV"] = old_env
     end
@@ -187,6 +202,93 @@ RSpec.describe Jekyll::CompressFlow do
       File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
       build_site("development")
       expect(generated).to be_empty
+    end
+
+    it "uses a site-configured compression priority" do
+      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+      compressed_before_hook = nil
+      probe = proc { |_site| compressed_before_hook = File.exist?(File.join(dest, "index.html.gz")) }
+      hooks = Jekyll::Hooks.instance_variable_get(:@registry).fetch(:site).fetch(:post_write)
+      priorities = Jekyll::Hooks.instance_variable_get(:@hook_priority)
+      Jekyll::Hooks.register(:site, :post_write, priority: 9, &probe)
+
+      begin
+        build_site("production", "compress_flow" => { "formats" => %w[gz], "priority" => 8 })
+      ensure
+        hooks.delete(probe)
+        priorities.delete(probe)
+      end
+
+      expect(compressed_before_hook).to be(false)
+      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
+    end
+
+    it "emits only the configured formats in a real build" do
+      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+      build_site("production", "compress_flow" => { "formats" => %w[gz] })
+      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
+      expect(File.exist?(File.join(dest, "index.html.br"))).to be(false)
+      expect(File.exist?(File.join(dest, "index.html.zst"))).to be(false)
+    end
+
+    it "regenerates siblings with the new content on rebuild" do
+      File.write(File.join(src, "index.html"), "<html>v1-#{'x' * 500}</html>")
+      build_site("production", "compress_flow" => { "formats" => %w[gz] })
+      first = Zlib::GzipReader.open(File.join(dest, "index.html.gz"), &:read)
+
+      File.write(File.join(src, "index.html"), "<html>v2-#{'y' * 500}</html>")
+      FileUtils.touch(File.join(src, "index.html"), mtime: Time.now + 10)
+      build_site("production", "compress_flow" => { "formats" => %w[gz] })
+      second = Zlib::GzipReader.open(File.join(dest, "index.html.gz"), &:read)
+
+      expect(first).to include("v1-")
+      expect(second).to include("v2-")
+    end
+
+    it "uses each site's own formats when two sites build in one process" do
+      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+      dest_b = Dir.mktmpdir
+      results = nil
+      begin
+        build_site("production", "compress_flow" => { "formats" => %w[gz] })
+        old_env = ENV.fetch("JEKYLL_ENV", nil)
+        ENV["JEKYLL_ENV"] = "production"
+        Jekyll::Site.new(Jekyll.configuration(
+                           "source" => src, "destination" => dest_b, "quiet" => true,
+                           "compress_flow" => { "formats" => %w[zst] }
+                         )).process
+        results = %w[gz zst].map { |ext| File.exist?(File.join(dest_b, "index.html.#{ext}")) }
+      ensure
+        old_env.nil? ? ENV.delete("JEKYLL_ENV") : ENV["JEKYLL_ENV"] = old_env
+        FileUtils.remove_entry(dest_b)
+      end
+
+      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
+      expect(File.exist?(File.join(dest, "index.html.zst"))).to be(false)
+      expect(results).to eq([false, true])
+    end
+
+    it "skips a missing compressor in warn mode but still emits other formats" do
+      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+      allow(described_class).to receive(:tool_version).and_wrap_original do |original, tool, pattern|
+        tool == "brotli" ? nil : original.call(tool, pattern)
+      end
+      allow(Jekyll.logger).to receive(:warn)
+
+      build_site("production", "compress_flow" => { "fail_on_error" => false })
+
+      expect(File.exist?(File.join(dest, "index.html.br"))).to be(false)
+      expect(File.exist?(File.join(dest, "index.html.zst"))).to be(true)
+      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
+      expect(Jekyll.logger).to have_received(:warn).with("CompressFlow:", /not installed/)
+    end
+
+    it "aborts the build when a configured compressor is missing" do
+      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+      allow(described_class).to receive(:tool_version).and_return(nil)
+
+      expect { build_site("production") }
+        .to raise_error(Jekyll::Errors::FatalException, /not installed/)
     end
   end
 end

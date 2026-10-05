@@ -1,6 +1,6 @@
 {
   "repo_notes": [
-    { "content": "Jekyll plugin (Ruby >= 3.3) that generates .br/.zst/.gz siblings next to text assets at the :site, :post_write hook, so a precompressed-capable static server (Caddy file_server precompressed, nginx gzip_static/brotli_static, Apache AddEncoding+MultiViews) serves them with zero per-request CPU." },
+    { "content": "Jekyll plugin (Ruby >= 3.3) that generates .br/.zst/.gz siblings next to text assets via a :site, :post_write dispatcher (priority defaults to 10; compress_flow.priority supports 0..10), so precompressed-capable static servers serve them with zero per-request CPU." },
     { "content": "Design: shells out to the platform brotli/zstd/gzip CLIs rather than native Ruby bindings — no native-extension dependency risk, best available quality levels." },
     { "content": "Production-only by default: enabled resolves to Jekyll.env == 'production' unless compress_flow.enabled is set explicitly in _config.yml." },
     { "content": "Missing compressor binary aborts once per format (fail_on_error: false downgrades to warning) — never silently ships uncompressed output." },
@@ -11,12 +11,12 @@
   "pages": [
     {
       "title": "Architecture Overview",
-      "purpose": "How the single-module plugin works: Jekyll::CompressFlow registers a :site, :post_write hook, CompressFlow.run walks site.dest for configured extensions and invokes each enabled format's CLI once per file",
+      "purpose": "How the plugin dispatches :site, :post_write at the selected compress_flow.priority (0..10, default 10), then CompressFlow.run walks site.dest and invokes enabled format CLIs",
       "page_notes": [{ "content": "Include Mermaid diagram: jekyll build -> post_write hook -> run(dest, config) -> per-format Open3 capture -> siblings" }]
     },
     {
       "title": "Configuration",
-      "purpose": "All options under the compress_flow: key in _config.yml — enabled, formats (br/zst/gz, all three by default, any subset), extensions, min_size, fail_on_error — and how DEFAULTS merge with user config",
+      "purpose": "All options under compress_flow: in _config.yml — enabled, priority (integer 0..10, default 10), formats, extensions, min_size, fail_on_error — and how DEFAULTS merge with user config",
       "parent": "Architecture Overview"
     },
     {

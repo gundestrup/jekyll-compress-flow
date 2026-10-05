@@ -1,7 +1,9 @@
 # AGENTS.md — jekyll-compress-flow
 
-Jekyll plugin: generates `.br`/`.zst`/`.gz` siblings for text assets at
-`:site, :post_write` so precompressed-capable static servers (Caddy
+Jekyll plugin: generates `.br`/`.zst`/`.gz` siblings for text assets via a
+`:site, :post_write` dispatcher (default priority 10, configurable from 0–10),
+after page post-processors and Fingerprint Flow. Precompressed-capable static
+servers (Caddy
 `file_server { precompressed ... }`) serve them with no per-request CPU.
 
 ## Layout
