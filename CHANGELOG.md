@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `Jekyll::CompressFlow::Interface.to_h` — the config surface
+  (`compress_flow` keys plus `formats:`/`priority:` enums) derived from
+  `DEFAULTS`, serialized to a committed `interface.yml` by
+  `rake interface`; `interface_spec.rb` pins manifest freshness.
+
 ### Changed
 
 - Register the compression dispatcher at low priority (10) by default, after

@@ -4,6 +4,7 @@ require "jekyll"
 require "open3"
 
 require_relative "compress_flow/version"
+require_relative "compress_flow/interface"
 
 module Jekyll
   # Generates .br/.zst/.gz siblings for text assets in the build output so a
