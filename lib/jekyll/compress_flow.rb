@@ -99,6 +99,9 @@ module Jekyll
     end
 
     def compress(file, format, cfg)
+      # Array-form system(): no shell — tool/args are literals from the frozen
+      # FORMATS table; file is a data argument globbed under the build dest.
+      # nosemgrep: ruby.lang.security.dangerous-exec.dangerous-exec
       ok = system(format["tool"], *format["args"], file, out: File::NULL, err: File::NULL)
       fail_or_warn(cfg, "#{format['tool']} failed on #{file}") unless ok
     end
@@ -107,6 +110,8 @@ module Jekyll
     # banner could not be parsed (or no pattern is defined — e.g. Apple gzip
     # vs GNU gzip use incomparable version strings), nil when not installed.
     def tool_version(tool, pattern)
+      # Array-form capture2e: no shell — tool is a literal from frozen FORMATS.
+      # nosemgrep: ruby.lang.security.dangerous-exec.dangerous-exec
       out, status = Open3.capture2e(tool, "--version")
       return nil unless status.success?
       return :unversioned unless pattern && (match = out.match(pattern))

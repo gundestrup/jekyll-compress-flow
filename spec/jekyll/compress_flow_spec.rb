@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "open3"
 require "zlib"
 
 RSpec.describe Jekyll::CompressFlow do
@@ -56,9 +57,10 @@ RSpec.describe Jekyll::CompressFlow do
     original = "<html>#{'x' * 500}</html>"
     write_file("index.html", original)
     described_class.run(dest, config)
-    expect(`brotli -d -c #{File.join(dest, "index.html.br")}`).to eq(original)
-    expect(`zstd -d -c #{File.join(dest, "index.html.zst")} 2>/dev/null`).to eq(original)
-    expect(`gzip -d -c #{File.join(dest, "index.html.gz")}`).to eq(original)
+    decoded = siblings("index.html").zip(%w[brotli zstd gzip]).map do |path, tool|
+      Open3.capture3(tool, "-d", "-c", path).first
+    end
+    expect(decoded).to all(eq(original))
   end
 
   it "skips non-text files and already-compressed siblings" do
