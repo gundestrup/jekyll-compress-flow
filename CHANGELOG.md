@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## 0.2.1 — 2026-10-06
+
 ### Added
 
 - `Jekyll::CompressFlow::Interface.to_h` — the config surface

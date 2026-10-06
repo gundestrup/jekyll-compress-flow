@@ -2,7 +2,7 @@
 # Public tag/config surface for tooling (editor extensions, doc linters).
 ---
 gem: jekyll-compress-flow
-version: 0.2.0
+version: 0.2.1
 tags: {}
 filters: []
 config:
