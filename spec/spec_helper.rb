@@ -7,7 +7,11 @@ SimpleCov.start do
   enable_coverage :branch
   add_filter "/spec/"
   minimum_coverage line: 85, branch: 75 if ENV["CI"] || ENV["COVERAGE"]
-  formatter SimpleCov::Formatter::CoberturaFormatter if ENV["CI"]
+  if ENV["CI"]
+    formatter SimpleCov::Formatter::MultiFormatter.new(
+      [SimpleCov::Formatter::CoberturaFormatter, SimpleCov::Formatter::JSONFormatter]
+    )
+  end
 end
 
 require "jekyll-compress-flow"

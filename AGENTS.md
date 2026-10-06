@@ -38,8 +38,9 @@ servers (Caddy
   upload on 3.4; separate `semgrep ci` job
 - Secrets used: `SEMGREP_APP_TOKEN`, `CODECOV_TOKEN` (repo → Settings →
   Secrets → Actions); Codecov OIDC works without the token
-- Codecov (`codecov.yml`, 85% target), SonarCloud automatic analysis
-  (`.sonarcloud.properties`), CodeFactor + DeepWiki index the public repo
+- Codecov (`codecov.yml`, 85% target), SonarQube Cloud CI analysis
+  (`sonar-project.properties`, scan step in `ci.yml` imports SimpleCov
+  `coverage/coverage.json`), CodeFactor + DeepWiki index the public repo
   automatically; `.devin/wiki.json` steers DeepWiki
 - `.semgrep.yml` holds the local ReDoS rule — pre-commit uses it, CI uses
   the org policy via `semgrep ci`
