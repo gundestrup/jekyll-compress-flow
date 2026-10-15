@@ -5,7 +5,7 @@ require "simplecov-cobertura" if ENV["CI"]
 
 SimpleCov.start do
   enable_coverage :branch
-  add_filter "/spec/"
+  skip "/spec/"
   minimum_coverage line: 85, branch: 75 if ENV["CI"] || ENV["COVERAGE"]
   if ENV["CI"]
     formatter SimpleCov::Formatter::MultiFormatter.new(
