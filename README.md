@@ -32,7 +32,7 @@ the **build host** (not the web server; visitors need nothing):
 
 | Tool | Generates | Minimum | Tested baseline |
 | ---- | --------- | ------- | --------------- |
-| `brotli` | `.br` | 1.1.0 | 1.2.0 (macOS) |
+| `brotli` | `.br` | 1.1.0 | 1.2.1 (macOS) |
 | `zstd` | `.zst` | 1.5.5 | 1.5.7 (macOS) |
 | `gzip` | `.gz` | any | preinstalled on macOS/Linux; ships with Git for Windows |
 
