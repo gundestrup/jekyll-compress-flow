@@ -6,11 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- CI: Semgrep moved from an inline `pip3 install semgrep==1.176.0` pin to
-  hashed `.github/requirements-ci.txt` (compiled from `requirements-ci.in`,
-  Python 3.12), installed with `--require-hashes`. Bumped Semgrep to
-  1.180.0; the version is now Dependabot-visible via a new `pip` ecosystem
-  entry for `/.github`. CI Node bumped from 24 to 26 (upcoming LTS).
+- CI: Semgrep moved from an inline `pip3 install` pin to the pinned
+  `semgrep/semgrep` container image (tag + sha256 digest). Image bumped
+  to 1.182.1 (certificate trust fix for the eMudhra CA compromise).
+  CI Node bumped from 24 to 26 (Active LTS "Lithium" since 2026-10-28).
+- CI: `sonarqube-scan-action` bumped to v8.4.0; `markdownlint-cli2`
+  bumped to 0.24.0; in-range gem updates (rubocop 1.92.2, parser
+  3.3.13.0, addressable 2.9.1, csv 3.3.7, sass-embedded 1.107.0).
+- CI: Ruby 4.0 added to the test matrix (latest stable major;
+  `required_ruby_version >= 3.3.0` already permits it).
 
 ## 0.2.1 — 2026-10-06
 

@@ -22,7 +22,7 @@ desc "Run the test suite and syntax checks (CI)"
 task :ci do
   sh "bundle exec rspec"
   sh "bundle exec rubocop"
-  sh "npx --yes markdownlint-cli2@0.23.2"
+  sh "npx --yes markdownlint-cli2@0.24.0"
   Dir["lib/**/*.rb"].each { |file| sh "bundle exec ruby -c #{file}" }
   sh "gem build #{GEMSPEC_FILE}"
 end
@@ -39,7 +39,7 @@ end
 
 desc "Lint Markdown documentation"
 task :markdownlint do
-  sh "npx --yes markdownlint-cli2@0.23.2"
+  sh "npx --yes markdownlint-cli2@0.24.0"
 end
 
 desc "Run security audit"
