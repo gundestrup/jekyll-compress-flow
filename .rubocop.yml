@@ -7,7 +7,6 @@ AllCops:
     - "vendor/**/*"
     - "node_modules/**/*"
     - "tmp/**/*"
-    - "spec/fixtures/**/*"
 
 plugins:
   - rubocop-rspec

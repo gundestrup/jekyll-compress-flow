@@ -40,7 +40,10 @@ RSpec.describe Jekyll::CompressFlow do
   it "accepts only compression priorities below fingerprinting" do
     expect(described_class.post_write_priority({})).to eq(10)
     expect(described_class.post_write_priority("priority" => 4)).to eq(4)
+    expect(described_class.post_write_priority(priority: 4)).to eq(4)
     expect { described_class.post_write_priority("priority" => 11) }
+      .to raise_error(Jekyll::Errors::FatalException)
+    expect { described_class.post_write_priority("priority" => "4") }
       .to raise_error(Jekyll::Errors::FatalException)
   end
 
@@ -96,6 +99,22 @@ RSpec.describe Jekyll::CompressFlow do
     described_class.run(dest, config.merge("formats" => %w[zst]))
     expect(File.exist?(File.join(dest, "index.html.zst"))).to be(true)
     expect(File.exist?(File.join(dest, "index.html.br"))).to be(false)
+  end
+
+  it "honors a custom extensions list" do
+    write_file("index.html")
+    write_file("data.foo")
+    described_class.run(dest, config.merge("extensions" => %w[foo], "formats" => %w[gz]))
+    expect(File.exist?(File.join(dest, "data.foo.gz"))).to be(true)
+    expect(File.exist?(File.join(dest, "index.html.gz"))).to be(false)
+  end
+
+  it "compresses every default text extension, not just html" do
+    %w[css js map].each { |ext| write_file("asset.#{ext}") }
+    described_class.run(dest, config.merge("formats" => %w[gz]))
+    %w[css js map].each do |ext|
+      expect(File.exist?(File.join(dest, "asset.#{ext}.gz"))).to be(true), "missing .gz for .#{ext}"
+    end
   end
 
   it "aborts on unknown formats when fail_on_error" do

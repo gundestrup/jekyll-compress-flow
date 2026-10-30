@@ -33,7 +33,7 @@ servers (Caddy
 
 ## CI / services
 
-- `.github/workflows/ci.yml` — Ruby 3.3/3.4 matrix; installs `brotli`/`zstd`
+- `.github/workflows/ci.yml` — Ruby 3.3/3.4/4.0 matrix; installs `brotli`/`zstd`
   via apt (specs shell out to real CLIs), bundle-audit, `rake ci`, Codecov
   upload on 3.4; separate `semgrep ci` job
 - Secrets used: `SEMGREP_APP_TOKEN`, `CODECOV_TOKEN` (repo → Settings →
