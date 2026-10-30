@@ -15,7 +15,12 @@ SimpleCov.start do
 end
 
 require "jekyll-compress-flow"
+require "jekyll_test_harness"
 require "tmpdir"
+
+# Install the Jekyll integration harness so specs can build real sites
+# with `jekyll_build`/`jekyll_files` instead of hand-rolled tmpdir setup.
+JekyllTestHarness.install!(framework: :rspec)
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

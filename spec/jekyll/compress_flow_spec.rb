@@ -201,118 +201,152 @@ RSpec.describe Jekyll::CompressFlow do
   end
 
   context "when running inside a real jekyll build" do
-    let(:src) { Dir.mktmpdir }
-
-    after { FileUtils.remove_entry(src) }
-
-    def build_site(env, config = {})
+    # Wraps jekyll_build with a JEKYLL_ENV override — the plugin only emits
+    # siblings in production builds.
+    def build_env_site(env, config: {}, files: {}, &block)
       old_env = ENV.fetch("JEKYLL_ENV", nil)
       ENV["JEKYLL_ENV"] = env
-      site_config = { "source" => src, "destination" => dest, "quiet" => true }.merge(config)
-      Jekyll::Site.new(Jekyll.configuration(site_config)).process
+      jekyll_build(config: config, files: files, &block)
     ensure
       old_env.nil? ? ENV.delete("JEKYLL_ENV") : ENV["JEKYLL_ENV"] = old_env
     end
 
+    def output_path(output_files, name)
+      File.join(output_files.dir, name)
+    end
+
+    let(:index_file) { { "index.html" => "<html>#{'x' * 500}</html>" } }
+
     it "the post_write hook emits siblings in production" do
-      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
-      build_site("production")
-      siblings("index.html").each do |path|
-        expect(File.exist?(path)).to be(true), "missing #{path}"
+      build_env_site("production", files: index_file) do |_site, output_files|
+        %w[br zst gz].each do |ext|
+          path = output_path(output_files, "index.html.#{ext}")
+          expect(File.exist?(path)).to be(true), "missing #{path}"
+        end
       end
     end
 
     it "the hook stays idle outside production" do
-      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
-      build_site("development")
-      expect(generated).to be_empty
+      build_env_site("development", files: index_file) do |_site, output_files|
+        expect(Dir.glob(File.join(output_files.dir, "**", "*.{br,zst,gz}"))).to be_empty
+      end
     end
 
     it "uses a site-configured compression priority" do
-      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
       compressed_before_hook = nil
       active = true
       # Jekyll has no public unregister — leave the probe registered and
       # disarm it after the build (see engineering-memory lesson).
-      probe = proc { |_site| compressed_before_hook = File.exist?(File.join(dest, "index.html.gz")) if active }
+      probe = proc { |site| compressed_before_hook = File.exist?(File.join(site.dest, "index.html.gz")) if active }
       Jekyll::Hooks.register(:site, :post_write, priority: 9, &probe)
 
       begin
-        build_site("production", "compress_flow" => { "formats" => %w[gz], "priority" => 8 })
+        build_env_site(
+          "production",
+          config: { "compress_flow" => { "formats" => %w[gz], "priority" => 8 } },
+          files: index_file
+        ) do |_site, output_files|
+          expect(File.exist?(output_path(output_files, "index.html.gz"))).to be(true)
+        end
       ensure
         active = false
       end
 
       expect(compressed_before_hook).to be(false)
-      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
     end
 
     it "emits only the configured formats in a real build" do
-      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
-      build_site("production", "compress_flow" => { "formats" => %w[gz] })
-      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
-      expect(File.exist?(File.join(dest, "index.html.br"))).to be(false)
-      expect(File.exist?(File.join(dest, "index.html.zst"))).to be(false)
-    end
-
-    it "regenerates siblings with the new content on rebuild" do
-      File.write(File.join(src, "index.html"), "<html>v1-#{'x' * 500}</html>")
-      build_site("production", "compress_flow" => { "formats" => %w[gz] })
-      first = Zlib::GzipReader.open(File.join(dest, "index.html.gz"), &:read)
-
-      File.write(File.join(src, "index.html"), "<html>v2-#{'y' * 500}</html>")
-      FileUtils.touch(File.join(src, "index.html"), mtime: Time.now + 10)
-      build_site("production", "compress_flow" => { "formats" => %w[gz] })
-      second = Zlib::GzipReader.open(File.join(dest, "index.html.gz"), &:read)
-
-      expect(first).to include("v1-")
-      expect(second).to include("v2-")
-    end
-
-    it "uses each site's own formats when two sites build in one process" do
-      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
-      dest_b = Dir.mktmpdir
-      results = nil
-      begin
-        build_site("production", "compress_flow" => { "formats" => %w[gz] })
-        old_env = ENV.fetch("JEKYLL_ENV", nil)
-        ENV["JEKYLL_ENV"] = "production"
-        Jekyll::Site.new(Jekyll.configuration(
-                           "source" => src, "destination" => dest_b, "quiet" => true,
-                           "compress_flow" => { "formats" => %w[zst] }
-                         )).process
-        results = %w[gz zst].map { |ext| File.exist?(File.join(dest_b, "index.html.#{ext}")) }
-      ensure
-        old_env.nil? ? ENV.delete("JEKYLL_ENV") : ENV["JEKYLL_ENV"] = old_env
-        FileUtils.remove_entry(dest_b)
+      build_env_site(
+        "production",
+        config: { "compress_flow" => { "formats" => %w[gz] } },
+        files: index_file
+      ) do |_site, output_files|
+        expect(File.exist?(output_path(output_files, "index.html.gz"))).to be(true)
+        expect(File.exist?(output_path(output_files, "index.html.br"))).to be(false)
+        expect(File.exist?(output_path(output_files, "index.html.zst"))).to be(false)
       end
-
-      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
-      expect(File.exist?(File.join(dest, "index.html.zst"))).to be(false)
-      expect(results).to eq([false, true])
     end
 
     it "skips a missing compressor in warn mode but still emits other formats" do
-      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
       allow(described_class).to receive(:tool_version).and_wrap_original do |original, tool, pattern|
         tool == "brotli" ? nil : original.call(tool, pattern)
       end
       allow(Jekyll.logger).to receive(:warn)
 
-      build_site("production", "compress_flow" => { "fail_on_error" => false })
+      build_env_site(
+        "production",
+        config: { "compress_flow" => { "fail_on_error" => false } },
+        files: index_file
+      ) do |_site, output_files|
+        expect(File.exist?(output_path(output_files, "index.html.br"))).to be(false)
+        expect(File.exist?(output_path(output_files, "index.html.zst"))).to be(true)
+        expect(File.exist?(output_path(output_files, "index.html.gz"))).to be(true)
+      end
 
-      expect(File.exist?(File.join(dest, "index.html.br"))).to be(false)
-      expect(File.exist?(File.join(dest, "index.html.zst"))).to be(true)
-      expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
       expect(Jekyll.logger).to have_received(:warn).with("CompressFlow:", /not installed/)
     end
 
     it "aborts the build when a configured compressor is missing" do
-      File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
       allow(described_class).to receive(:tool_version).and_return(nil)
 
-      expect { build_site("production") }
-        .to raise_error(Jekyll::Errors::FatalException, /not installed/)
+      expect do
+        build_env_site("production", files: index_file) { |_site, _output_files| nil }
+      end.to raise_error(JekyllTestHarness::SiteBuildError, /not installed/)
+    end
+
+    # The harness builds each site in a fresh temporary directory, so
+    # examples that mutate the source or share one source/destination across
+    # builds keep their own scaffolding.
+    context "with builds sharing one source tree" do
+      let(:src) { Dir.mktmpdir }
+
+      after { FileUtils.remove_entry(src) }
+
+      def build_site(env, config = {})
+        old_env = ENV.fetch("JEKYLL_ENV", nil)
+        ENV["JEKYLL_ENV"] = env
+        site_config = { "source" => src, "destination" => dest, "quiet" => true }.merge(config)
+        Jekyll::Site.new(Jekyll.configuration(site_config)).process
+      ensure
+        old_env.nil? ? ENV.delete("JEKYLL_ENV") : ENV["JEKYLL_ENV"] = old_env
+      end
+
+      it "regenerates siblings with the new content on rebuild" do
+        File.write(File.join(src, "index.html"), "<html>v1-#{'x' * 500}</html>")
+        build_site("production", "compress_flow" => { "formats" => %w[gz] })
+        first = Zlib::GzipReader.open(File.join(dest, "index.html.gz"), &:read)
+
+        File.write(File.join(src, "index.html"), "<html>v2-#{'y' * 500}</html>")
+        FileUtils.touch(File.join(src, "index.html"), mtime: Time.now + 10)
+        build_site("production", "compress_flow" => { "formats" => %w[gz] })
+        second = Zlib::GzipReader.open(File.join(dest, "index.html.gz"), &:read)
+
+        expect(first).to include("v1-")
+        expect(second).to include("v2-")
+      end
+
+      it "uses each site's own formats when two sites build in one process" do
+        File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
+        dest_b = Dir.mktmpdir
+        results = nil
+        begin
+          build_site("production", "compress_flow" => { "formats" => %w[gz] })
+          old_env = ENV.fetch("JEKYLL_ENV", nil)
+          ENV["JEKYLL_ENV"] = "production"
+          Jekyll::Site.new(Jekyll.configuration(
+                             "source" => src, "destination" => dest_b, "quiet" => true,
+                             "compress_flow" => { "formats" => %w[zst] }
+                           )).process
+          results = %w[gz zst].map { |ext| File.exist?(File.join(dest_b, "index.html.#{ext}")) }
+        ensure
+          old_env.nil? ? ENV.delete("JEKYLL_ENV") : ENV["JEKYLL_ENV"] = old_env
+          FileUtils.remove_entry(dest_b)
+        end
+
+        expect(File.exist?(File.join(dest, "index.html.gz"))).to be(true)
+        expect(File.exist?(File.join(dest, "index.html.zst"))).to be(false)
+        expect(results).to eq([false, true])
+      end
     end
   end
 end
