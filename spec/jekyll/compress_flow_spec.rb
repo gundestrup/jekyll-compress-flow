@@ -25,14 +25,17 @@ RSpec.describe Jekyll::CompressFlow do
     Dir.glob(File.join(dest, "**", "*.{br,zst,gz}"))
   end
 
-  it "registers a dispatcher after output processors" do
-    callbacks = Jekyll::Hooks.instance_variable_get(:@registry).fetch(:site).fetch(:post_write).select do |hook|
-      hook.source_location&.first&.end_with?("/lib/jekyll/compress_flow.rb")
+  it "dispatches at every allowed priority via the public hook seam" do
+    (0..10).each do |priority|
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "index.html"), "x" * 1024)
+        site = Struct.new(:config, :dest).new(
+          { "compress_flow" => { "enabled" => true, "formats" => %w[gz], "priority" => priority } }, dir
+        )
+        Jekyll::Hooks.trigger(:site, :post_write, site)
+        expect(File.exist?(File.join(dir, "index.html.gz"))).to be(true), "priority #{priority} did not dispatch"
+      end
     end
-    priorities = Jekyll::Hooks.instance_variable_get(:@hook_priority)
-    registered = callbacks.map { |hook| -priorities.fetch(hook).first }
-
-    expect(registered).to match_array((0..10).to_a)
     expect(Jekyll::CompressFlow::DEFAULT_POST_WRITE_PRIORITY).to eq(10)
     expect(described_class.post_write_priority({})).to eq(10)
   end
@@ -228,16 +231,16 @@ RSpec.describe Jekyll::CompressFlow do
     it "uses a site-configured compression priority" do
       File.write(File.join(src, "index.html"), "<html>#{'x' * 500}</html>")
       compressed_before_hook = nil
-      probe = proc { |_site| compressed_before_hook = File.exist?(File.join(dest, "index.html.gz")) }
-      hooks = Jekyll::Hooks.instance_variable_get(:@registry).fetch(:site).fetch(:post_write)
-      priorities = Jekyll::Hooks.instance_variable_get(:@hook_priority)
+      active = true
+      # Jekyll has no public unregister — leave the probe registered and
+      # disarm it after the build (see engineering-memory lesson).
+      probe = proc { |_site| compressed_before_hook = File.exist?(File.join(dest, "index.html.gz")) if active }
       Jekyll::Hooks.register(:site, :post_write, priority: 9, &probe)
 
       begin
         build_site("production", "compress_flow" => { "formats" => %w[gz], "priority" => 8 })
       ensure
-        hooks.delete(probe)
-        priorities.delete(probe)
+        active = false
       end
 
       expect(compressed_before_hook).to be(false)
