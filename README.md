@@ -25,6 +25,19 @@ simply happens at build time instead of request time.
 
 [Compare different formats](https://speedvitals.com/blog/zstd-vs-brotli-vs-gzip/)
 
+<!-- markdownlint-disable MD033 -->
+<picture>
+  <source
+    srcset="docs/assets/jekyll-compress-flow-demo.avif"
+    type="image/avif">
+  <source
+    srcset="docs/assets/jekyll-compress-flow-demo.webp"
+    type="image/webp">
+  <img src="docs/assets/jekyll-compress-flow-demo.png"
+       alt="jekyll-compress-flow demo">
+</picture>
+<!-- markdownlint-enable MD033 -->
+
 ## Prerequisites
 
 The plugin shells out to the platform compressor CLIs — install them on
