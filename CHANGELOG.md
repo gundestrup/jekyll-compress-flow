@@ -11,8 +11,10 @@ All notable changes to this project will be documented in this file.
   to 1.182.1 (certificate trust fix for the eMudhra CA compromise).
   CI Node bumped from 24 to 26 (Active LTS "Lithium" since 2026-10-28).
 - CI: `sonarqube-scan-action` bumped to v8.4.0; `markdownlint-cli2`
-  bumped to 0.24.0; in-range gem updates (rubocop 1.92.2, parser
-  3.3.13.0, addressable 2.9.1, csv 3.3.7, sass-embedded 1.107.0).
+  bumped to 0.24.0; `ruby/setup-ruby` v1.335.0 → v1.338.0; in-range
+  gem updates (rubocop 1.92.2, parser 3.3.13.0, addressable 2.9.2,
+  csv 3.3.7, sass-embedded 1.108.1, rspec-* 3.13.x patches);
+  `BUNDLED WITH` 4.0.23 → 4.0.24.
 - CI: Ruby 4.0 added to the test matrix (latest stable major;
   `required_ruby_version >= 3.3.0` already permits it).
 
