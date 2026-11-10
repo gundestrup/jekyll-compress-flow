@@ -8,10 +8,17 @@ Gem::Specification.new do |spec|
   spec.authors = ["Svend Gundestrup"]
   spec.email = ["svend@gundestrup.dk"]
   spec.summary = "Generate .br/.zst/.gz siblings for Jekyll build output"
-  spec.description = "A Jekyll plugin that writes Brotli, Zstandard and gzip siblings next to text " \
-                     "assets at the end of a build, so a precompressed-capable static server " \
-                     "(e.g. Caddy's file_server precompressed) can serve them without per-request " \
-                     "compression CPU."
+  # NOTE: rubygems.org renders the description through RDoc::Markup only
+  # when it starts with an == heading at column 0 — keep the heredoc
+  # content flush-left or the page renders as one plain <p>.
+  spec.description = <<~DESC
+    == Precompressed siblings for Jekyll output
+
+    Writes .br, .zst and .gz siblings next to text assets at the end of a
+    build, so a precompressed-capable static server (for example Caddy's
+    file_server precompressed) can serve them without per-request
+    compression CPU.
+  DESC
   spec.homepage = "https://github.com/gundestrup/jekyll-compress-flow"
   spec.license = "AGPL-3.0-or-later"
   spec.metadata = {
