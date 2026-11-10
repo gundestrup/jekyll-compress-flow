@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## 0.2.2 — 2026-11-10
+
 ### Added
 
 - `rake docs:demo` — captures the checked-in illustrative overview as
@@ -24,6 +26,8 @@ All notable changes to this project will be documented in this file.
   `BUNDLED WITH` 4.0.23 → 4.0.24.
 - CI: Ruby 4.0 added to the test matrix (latest stable major;
   `required_ruby_version >= 3.3.0` already permits it).
+- Gemspec `description` rewritten as an RDoc `==`-headed blurb so
+  rubygems.org renders it as markup instead of a single plain paragraph.
 
 ## 0.2.1 — 2026-10-06
 
