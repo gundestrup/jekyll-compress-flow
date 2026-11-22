@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Dev-tooling bump: `rubocop` 1.92.2 → 1.92.3 (plus transitive dev-deps).
+
 ## 0.2.2 — 2026-11-10
 
 ### Added
