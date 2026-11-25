@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Dev-tooling bump: `rubocop` 1.92.2 → 1.92.3 (plus transitive dev-deps).
+- Development Ruby pin bumped to 3.4.13 (CVE-2026-132825); `ruby/setup-ruby` bumped to v1.343.0.
 
 ## 0.2.2 — 2026-11-10
 
